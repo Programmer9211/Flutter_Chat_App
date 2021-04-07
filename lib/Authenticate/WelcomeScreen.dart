@@ -6,6 +6,7 @@ class WelcomeScreen extends StatelessWidget {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
+      backgroundColor: Color.fromRGBO(238, 236, 250, 1),
       body: Column(
         children: [
           SizedBox(
@@ -13,10 +14,9 @@ class WelcomeScreen extends StatelessWidget {
           ),
           Container(
             height: size.height / 3,
-            width: size.width / 1.01,
+            width: size.width,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
                 image: DecorationImage(
                     image: NetworkImage(
                         'https://image.shutterstock.com/image-vector/vector-illustration-flat-linear-style-260nw-1147927685.jpg'),
@@ -39,15 +39,16 @@ class WelcomeScreen extends StatelessWidget {
                 fontSize: size.width / 20, fontWeight: FontWeight.w500),
           ),
           Text(
-            "with people",
+            "with people.",
             style: TextStyle(
                 fontSize: size.width / 20, fontWeight: FontWeight.w500),
           ),
           SizedBox(
             height: size.height / 10,
           ),
-          customButton(size, () {}, Colors.blue, "Create Account"),
-          customButton(size, () {}, Colors.blue, "Log In"),
+          customButton(
+              size, () {}, Color.fromRGBO(129, 110, 217, 1), "Create Account"),
+          customButton(size, () {}, Color.fromRGBO(244, 136, 36, 1), "Log In"),
         ],
       ),
     );
