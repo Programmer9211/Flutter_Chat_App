@@ -1,3 +1,4 @@
+import 'package:chatapp/Authenticate/Login.dart';
 import 'package:flutter/material.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -15,7 +16,6 @@ class WelcomeScreen extends StatelessWidget {
           Container(
             height: size.height / 3,
             width: size.width,
-            alignment: Alignment.center,
             decoration: BoxDecoration(
                 image: DecorationImage(
                     image: NetworkImage(
@@ -26,9 +26,9 @@ class WelcomeScreen extends StatelessWidget {
             height: size.height / 20,
           ),
           Text(
-            "Welcome to Chat App!",
+            "Welcome To Chat App!",
             style: TextStyle(
-                fontSize: size.width / 13, fontWeight: FontWeight.w500),
+                fontSize: size.width / 14, fontWeight: FontWeight.w500),
           ),
           SizedBox(
             height: size.height / 20,
@@ -36,43 +36,54 @@ class WelcomeScreen extends StatelessWidget {
           Text(
             "Chat App a new way to connect ",
             style: TextStyle(
-                fontSize: size.width / 20, fontWeight: FontWeight.w500),
+              fontSize: size.width / 20,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           Text(
             "with people.",
             style: TextStyle(
-                fontSize: size.width / 20, fontWeight: FontWeight.w500),
+              fontSize: size.width / 20,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           SizedBox(
             height: size.height / 10,
           ),
           customButton(
-              size, () {}, Color.fromRGBO(129, 110, 217, 1), "Create Account"),
-          customButton(size, () {}, Color.fromRGBO(244, 136, 36, 1), "Log In"),
+              size, Color.fromRGBO(129, 110, 217, 1), "Create Account", () {}),
+          customButton(
+              size,
+              Color.fromRGBO(244, 136, 36, 1),
+              "Log In",
+              () => Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => LoginScreen()))),
         ],
       ),
     );
   }
 
-  Widget customButton(Size size, Function func, Color color, String title) {
+  Widget customButton(Size size, Color color, String text, Function onTap) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Material(
-        elevation: 10,
-        borderRadius: BorderRadius.circular(8),
-        child: GestureDetector(
-          onTap: func,
+      padding: EdgeInsets.symmetric(vertical: 10),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Material(
+          color: color,
+          elevation: 8,
+          borderRadius: BorderRadius.circular(10),
           child: Container(
             height: size.height / 12.9,
             width: size.width / 1.2,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8), color: color),
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Text(
-              title,
+              text,
               style: TextStyle(
-                fontSize: size.width / 22,
                 color: Colors.white,
+                fontSize: size.width / 22,
                 fontWeight: FontWeight.w500,
               ),
             ),
