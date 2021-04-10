@@ -1,3 +1,7 @@
+import 'dart:async';
+import 'package:chatapp/Screens/HomeScreen.dart';
+import 'package:chatapp/Services/Network.dart';
+
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -5,7 +9,68 @@ class LoginScreen extends StatefulWidget {
   _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
+  AnimationController controller, textAnim;
+  Animation animation, textAnimation;
+  bool isresize, buttonAnim, isLogin;
+  double width = 0;
+  double contH, contW;
+  TextEditingController _name = TextEditingController();
+  TextEditingController _gmail = TextEditingController();
+  TextEditingController _password = TextEditingController();
+  GlobalKey<FormState> _key = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    super.initState();
+    isresize = false;
+    buttonAnim = false;
+    isLogin = true;
+
+    controller =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 600));
+    textAnim =
+        AnimationController(vsync: this, duration: Duration(milliseconds: 600));
+
+    animation = Tween<Offset>(begin: Offset(0.0, -1.0), end: Offset.zero)
+        .animate(controller);
+    textAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(textAnim);
+
+    controller.forward();
+
+    Timer(
+      Duration(milliseconds: 600),
+      () {
+        textAnim.forward();
+        if (isresize == false) {
+          setState(() {
+            width = MediaQuery.of(context).size.width / 1.4;
+            if (isLogin) {
+              contH = MediaQuery.of(context).size.height / 18;
+              contW = MediaQuery.of(context).size.width / 5;
+            } else {
+              contH = MediaQuery.of(context).size.height / 18;
+              contW = MediaQuery.of(context).size.width / 4.5;
+            }
+          });
+        }
+      },
+    );
+  }
+
+  String validateEmail(String value) {
+    Pattern pattern =
+        r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]"
+        r"{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]"
+        r"{0,253}[a-zA-Z0-9])?)*$";
+    RegExp regex = new RegExp(pattern);
+    if (!regex.hasMatch(value) || value == null)
+      return 'Enter a valid email address';
+    else
+      return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -16,6 +81,8 @@ class _LoginScreenState extends State<LoginScreen> {
           width: size.width,
           color: Color.fromRGBO(222, 139, 88, 1),
           child: SingleChildScrollView(
+              child: AnimatedBuilder(
+            animation: animation,
             child: Column(
               children: [
                 SizedBox(
@@ -39,63 +106,260 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   //color: Color.fromRGBO(81, 223, 232, 1),
                   child: Container(
-                    height: size.height / 2.5,
+                    height: size.height / 1.9,
                     width: size.width / 1.2,
                     child: Column(
+                      //crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(
                           height: size.height / 30,
                         ),
-                        Text(
-                          'Log In',
-                          style: TextStyle(
-                            fontSize: size.width / 18,
-                            fontWeight: FontWeight.w500,
-                            color: Color.fromRGBO(222, 139, 88, 1),
-                          ),
-                        ),
+                        AnimatedBuilder(
+                            animation: textAnimation,
+                            child: Text(
+                              isLogin ? 'Log In' : "Create Account",
+                              style: TextStyle(
+                                fontSize: size.width / 18,
+                                fontWeight: FontWeight.w500,
+                                color: Color.fromRGBO(222, 139, 88, 1),
+                              ),
+                            ),
+                            builder: (context, child) {
+                              return ScaleTransition(
+                                scale: textAnimation,
+                                child: child,
+                              );
+                            }),
                         SizedBox(
                           height: size.height / 30,
                         ),
-                        Container(
-                          height: size.height / 15,
-                          width: size.width / 1.4,
-                          child: TextField(
-                            decoration: InputDecoration(
-                              labelText: "email",
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
+                        AnimatedContainer(
+                          height: isLogin ? 0 : size.height / 15,
+                          width: isLogin ? 0 : width,
+                          alignment: Alignment.centerLeft,
+                          duration: Duration(milliseconds: 400),
+                          child: width == 0
+                              ? Container()
+                              : TextField(
+                                  controller: _name,
+                                  style: TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    fillColor: Colors.grey,
+                                    filled: true,
+                                    hintStyle: TextStyle(
+                                      color: Colors.white,
+                                    ),
+                                    hintText: "name",
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                ),
                         ),
                         SizedBox(height: size.height / 40),
-                        Container(
+                        AnimatedContainer(
+                          height: _gmail.text.isEmpty
+                              ? size.height / 15
+                              : (validateEmail(_gmail.text) != null
+                                  ? size.height / 10.5
+                                  : size.height / 15),
+                          width: width,
+                          duration: Duration(milliseconds: 400),
+                          child: width == 0
+                              ? Container()
+                              : Form(
+                                  key: _key,
+                                  autovalidateMode: AutovalidateMode.always,
+                                  child: TextFormField(
+                                    validator: validateEmail,
+                                    controller: _gmail,
+                                    style: TextStyle(color: Colors.white),
+                                    decoration: InputDecoration(
+                                      // contentPadding: EdgeInsets.symmetric(
+                                      //     vertical: 20, horizontal: 20),
+
+                                      fillColor: Colors.grey,
+                                      filled: true,
+                                      hintStyle: TextStyle(
+                                        color: Colors.white,
+                                      ),
+                                      hintText: "gmail",
+                                      //helperText: " ",
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                        ),
+                        SizedBox(height: size.height / 40),
+                        AnimatedContainer(
                           height: size.height / 15,
-                          width: size.width / 1.4,
-                          child: TextField(
-                            decoration: InputDecoration(
-                              labelText: "password",
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
+                          width: width,
+                          duration: Duration(milliseconds: 400),
+                          child: width == 0
+                              ? Container()
+                              : TextField(
+                                  style: TextStyle(color: Colors.white),
+                                  controller: _password,
+                                  decoration: InputDecoration(
+                                    fillColor: Colors.grey,
+                                    filled: true,
+                                    hintStyle: TextStyle(
+                                      color: Colors.white,
+                                    ),
+                                    hintText: "password",
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                ),
                         ),
                         SizedBox(
                           height: size.height / 40,
                         ),
-                        ElevatedButton(
-                          onPressed: () {},
-                          child: Text("Login",
+                        isresize
+                            ? CircularProgressIndicator()
+                            : AnimatedBuilder(
+                                animation: textAnimation,
+                                child: AnimatedContainer(
+                                  height:
+                                      contH == null ? size.height / 18 : contH,
+                                  width: contW == null ? size.width / 5 : contW,
+                                  duration: Duration(milliseconds: 300),
+                                  decoration: BoxDecoration(
+                                      color: Color.fromRGBO(222, 139, 88, 1),
+                                      borderRadius: BorderRadius.circular(
+                                          buttonAnim ? 1000 : 15)),
+                                  child: buttonAnim
+                                      ? null
+                                      : ElevatedButton(
+                                          onPressed: () {
+                                            if (validateEmail(_gmail.text) ==
+                                                "Enter a valid email address") {
+                                              _gmail.text = "@gmail.com";
+                                              setState(() {});
+                                              _key.currentState.validate();
+                                            } else {
+                                              setState(() {
+                                                buttonAnim = true;
+                                                contH = size.height / 18;
+                                                contW = size.height / 18;
+                                              });
+
+                                              Timer(Duration(milliseconds: 300),
+                                                  () {
+                                                isresize = true;
+                                                setState(() {});
+                                              });
+
+                                              Map<String, dynamic> map = {
+                                                "username": _name.text,
+                                                "gmail": _gmail.text,
+                                                "password": _password.text,
+                                              };
+
+                                              print(map);
+
+                                              registerNewUser(map)
+                                                  .then((value) {
+                                                Timer(
+                                                    Duration(milliseconds: 300),
+                                                    () {
+                                                  setState(() {
+                                                    width = 1;
+                                                  });
+                                                  textAnim.reverse();
+                                                  Timer(
+                                                      Duration(
+                                                          milliseconds: 401),
+                                                      () {
+                                                    width = 0;
+                                                    setState(() {});
+                                                    controller.reverse();
+                                                    if (value == 200 ||
+                                                        value == 201) {
+                                                      Navigator.of(context)
+                                                          .push(
+                                                        MaterialPageRoute(
+                                                          builder: (_) =>
+                                                              HomeScreen(),
+                                                        ),
+                                                      );
+                                                    }
+                                                  });
+                                                });
+                                              });
+                                            }
+                                          },
+                                          child: Text(
+                                              isLogin
+                                                  ? "Login"
+                                                  : "Create Account",
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              )),
+                                          style: ElevatedButton.styleFrom(
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(15),
+                                            ),
+                                            primary:
+                                                Color.fromRGBO(222, 139, 88, 1),
+                                          ),
+                                        ),
+                                ),
+                                builder: (context, child) {
+                                  return ScaleTransition(
+                                    scale: textAnimation,
+                                    child: child,
+                                  );
+                                },
+                              ),
+                        SizedBox(
+                          height: size.height / 40,
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "New User ",
                               style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                              )),
-                          style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15)),
-                            primary: Color.fromRGBO(222, 139, 88, 1),
-                          ),
+                                fontSize: size.width / 25,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                if (isLogin) {
+                                  setState(() {
+                                    _gmail.text = "@gmail.com";
+                                    isLogin = !isLogin;
+                                    contH = size.height / 18;
+                                    contW = size.width / 3;
+                                  });
+                                } else {
+                                  setState(() {
+                                    _gmail.text = "@gmail.com";
+                                    isLogin = !isLogin;
+                                    contH = size.height / 18;
+                                    contW = size.width / 5;
+                                  });
+                                }
+                                // textAnim.reset();
+                                // textAnim.forward();
+                              },
+                              child: Text(
+                                isLogin ? "Create Account" : "Sign In",
+                                style: TextStyle(
+                                  fontSize: size.width / 25,
+                                  color: Colors.blue,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            )
+                          ],
                         )
                       ],
                     ),
@@ -103,7 +367,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ],
             ),
-          )),
+            builder: (context, child) {
+              return SlideTransition(
+                position: animation,
+                child: child,
+              );
+            },
+          ))),
     );
   }
 }
