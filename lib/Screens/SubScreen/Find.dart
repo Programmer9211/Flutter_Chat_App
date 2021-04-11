@@ -1,9 +1,18 @@
 import 'dart:async';
 
+import 'package:chatapp/Screens/SubScreen/ChatScreen.dart';
 import 'package:chatapp/Services/Network.dart';
+import 'package:chatapp/bloc/chatbloc.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:socket_io_client/socket_io_client.dart';
 
 class Find extends StatefulWidget {
+  final SharedPreferences prefs;
+  final Socket socket;
+  final ChatBloc bloc;
+  Find({this.prefs, this.socket, this.bloc});
+
   @override
   _FindState createState() => _FindState();
 }
@@ -49,8 +58,11 @@ class _FindState extends State<Find> with SingleTickerProviderStateMixin {
             userMap = value;
             isSearching = false;
             width = MediaQuery.of(context).size.width / 4.5;
-            animationController.reverse();
-            _controller.clear();
+
+            if (userMap.containsKey('gmail')) {
+              animationController.reverse();
+              _controller.clear();
+            }
           });
         });
       });
@@ -120,10 +132,23 @@ class _FindState extends State<Find> with SingleTickerProviderStateMixin {
                       ),
                       userMap == null
                           ? Container()
-                          : ListTile(
-                              title: Text(userMap['username']),
-                              subtitle: Text(userMap['gmail']),
-                            ),
+                          : (userMap.containsKey('msg')
+                              ? Container(
+                                  child: Text(userMap['msg']),
+                                )
+                              : ListTile(
+                                  onTap: () => Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                          builder: (_) => ChatScreen(
+                                              bloc: widget.bloc,
+                                              name: userMap['username'],
+                                              recieverId: userMap['gmail'],
+                                              senderId: widget.prefs
+                                                  .getString('gmail'),
+                                              socket: widget.socket))),
+                                  title: Text(userMap['username']),
+                                  subtitle: Text(userMap['gmail']),
+                                )),
                     ],
                   ),
                 ),

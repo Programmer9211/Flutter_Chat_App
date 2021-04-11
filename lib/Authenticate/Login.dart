@@ -1,16 +1,22 @@
 import 'dart:async';
 import 'package:chatapp/Screens/HomeScreen.dart';
 import 'package:chatapp/Services/Network.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
+  final bool isLogin;
+  LoginScreen({this.isLogin});
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen>
     with TickerProviderStateMixin {
+  SharedPreferences prefs;
   AnimationController controller, textAnim;
   Animation animation, textAnimation;
   bool isresize, buttonAnim, isLogin;
@@ -20,13 +26,18 @@ class _LoginScreenState extends State<LoginScreen>
   TextEditingController _gmail = TextEditingController();
   TextEditingController _password = TextEditingController();
   GlobalKey<FormState> _key = GlobalKey<FormState>();
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  FlutterLocalNotificationsPlugin notificationsPlugin;
 
   @override
   void initState() {
     super.initState();
     isresize = false;
     buttonAnim = false;
-    isLogin = true;
+    isLogin = widget.isLogin;
+    getInstance();
+    permission();
+    initMessaging();
 
     controller =
         AnimationController(vsync: this, duration: Duration(milliseconds: 600));
@@ -59,6 +70,10 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
+  void getInstance() async {
+    prefs = await SharedPreferences.getInstance();
+  }
+
   String validateEmail(String value) {
     Pattern pattern =
         r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]"
@@ -69,6 +84,108 @@ class _LoginScreenState extends State<LoginScreen>
       return 'Enter a valid email address';
     else
       return null;
+  }
+
+  void onPressed(Size size) {
+    if (validateEmail(_gmail.text) == "Enter a valid email address") {
+      _gmail.text = "@gmail.com";
+      setState(() {});
+      _key.currentState.validate();
+    } else {
+      FocusScope.of(context).unfocus();
+      setState(() {
+        buttonAnim = true;
+        contH = size.height / 18;
+        contW = size.height / 18;
+      });
+
+      Timer(Duration(milliseconds: 300), () {
+        isresize = true;
+        setState(() {});
+      });
+
+      if (isLogin) {
+        Map<String, dynamic> map = {
+          "gmail": _gmail.text,
+          "password": _password.text,
+        };
+
+        print(map);
+        loginUser(map).then((value) {
+          Timer(Duration(milliseconds: 300), () {
+            setState(() {
+              width = 1;
+            });
+            textAnim.reverse();
+            Timer(Duration(milliseconds: 401), () async {
+              if (value['msg'] == "Login Sucessful") {
+                await prefs
+                    .setString('username', value['data']['username'])
+                    .then((value) => print(value));
+                await prefs.setString('gmail', value['data']['gmail']);
+                controller.reverse();
+                width = 0;
+                setState(() {});
+
+                String gmail = value['data']['gmail'];
+
+                String topic = gmail.substring(0, gmail.length - 10);
+
+                print(topic);
+
+                await messaging.subscribeToTopic(topic);
+
+                Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                        builder: (context) => HomeScreen(
+                              prefs: prefs,
+                            )),
+                    (Route<dynamic> route) => false);
+              }
+            });
+          });
+        });
+      } else {
+        Map<String, dynamic> map = {
+          "username": _name.text,
+          "gmail": _gmail.text,
+          "password": _password.text,
+        };
+
+        print(map);
+        registerNewUser(map).then((value) {
+          Timer(Duration(milliseconds: 300), () {
+            if (value == 200 || value == 201) {
+              setState(() {
+                width = 1;
+              });
+            }
+            textAnim.reverse();
+            Timer(Duration(milliseconds: 401), () async {
+              if (value == 200 || value == 201) {
+                width = 0;
+                setState(() {});
+                controller.reverse();
+
+                await prefs
+                    .setString('username', _name.text)
+                    .then((value) => print(value));
+                await prefs.setString('gmail', _gmail.text);
+
+                await messaging.subscribeToTopic(_gmail.text);
+
+                Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                        builder: (context) => HomeScreen(
+                              prefs: prefs,
+                            )),
+                    (Route<dynamic> route) => false);
+              }
+            });
+          });
+        });
+      }
+    }
   }
 
   @override
@@ -225,7 +342,9 @@ class _LoginScreenState extends State<LoginScreen>
                                 child: AnimatedContainer(
                                   height:
                                       contH == null ? size.height / 18 : contH,
-                                  width: contW == null ? size.width / 5 : contW,
+                                  width: isLogin
+                                      ? (contW == null ? size.width / 5 : contW)
+                                      : size.width / 3,
                                   duration: Duration(milliseconds: 300),
                                   decoration: BoxDecoration(
                                       color: Color.fromRGBO(222, 139, 88, 1),
@@ -234,64 +353,7 @@ class _LoginScreenState extends State<LoginScreen>
                                   child: buttonAnim
                                       ? null
                                       : ElevatedButton(
-                                          onPressed: () {
-                                            if (validateEmail(_gmail.text) ==
-                                                "Enter a valid email address") {
-                                              _gmail.text = "@gmail.com";
-                                              setState(() {});
-                                              _key.currentState.validate();
-                                            } else {
-                                              setState(() {
-                                                buttonAnim = true;
-                                                contH = size.height / 18;
-                                                contW = size.height / 18;
-                                              });
-
-                                              Timer(Duration(milliseconds: 300),
-                                                  () {
-                                                isresize = true;
-                                                setState(() {});
-                                              });
-
-                                              Map<String, dynamic> map = {
-                                                "username": _name.text,
-                                                "gmail": _gmail.text,
-                                                "password": _password.text,
-                                              };
-
-                                              print(map);
-
-                                              registerNewUser(map)
-                                                  .then((value) {
-                                                Timer(
-                                                    Duration(milliseconds: 300),
-                                                    () {
-                                                  setState(() {
-                                                    width = 1;
-                                                  });
-                                                  textAnim.reverse();
-                                                  Timer(
-                                                      Duration(
-                                                          milliseconds: 401),
-                                                      () {
-                                                    width = 0;
-                                                    setState(() {});
-                                                    controller.reverse();
-                                                    if (value == 200 ||
-                                                        value == 201) {
-                                                      Navigator.of(context)
-                                                          .push(
-                                                        MaterialPageRoute(
-                                                          builder: (_) =>
-                                                              HomeScreen(),
-                                                        ),
-                                                      );
-                                                    }
-                                                  });
-                                                });
-                                              });
-                                            }
-                                          },
+                                          onPressed: () => onPressed(size),
                                           child: Text(
                                               isLogin
                                                   ? "Login"
@@ -375,5 +437,57 @@ class _LoginScreenState extends State<LoginScreen>
             },
           ))),
     );
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    textAnim.dispose();
+    _name.dispose();
+    _gmail.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
+  void initMessaging() async {
+    var androidinit = AndroidInitializationSettings('flut');
+
+    var iosInitialize = IOSInitializationSettings();
+
+    var initSetting =
+        InitializationSettings(android: androidinit, iOS: iosInitialize);
+
+    notificationsPlugin = FlutterLocalNotificationsPlugin();
+
+    notificationsPlugin.initialize(initSetting);
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      RemoteNotification notification = message.notification;
+      showNotifications(notification.title, notification.body);
+    });
+  }
+
+  void showNotifications(String title, String body) async {
+    var andDetails = AndroidNotificationDetails(
+        "channelId", "channelName", "channelDescription");
+
+    var iosDetails = IOSNotificationDetails();
+
+    var generalNotifiDDetails =
+        NotificationDetails(android: andDetails, iOS: iosDetails);
+
+    await notificationsPlugin.show(0, title, body, generalNotifiDDetails,
+        payload: "Notification");
+  }
+
+  void permission() async {
+    NotificationSettings sett = await messaging.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true);
   }
 }

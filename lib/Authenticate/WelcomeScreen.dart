@@ -1,5 +1,4 @@
 import 'package:chatapp/Authenticate/Login.dart';
-import 'package:chatapp/Screens/HomeScreen.dart';
 import 'package:flutter/material.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -56,14 +55,18 @@ class WelcomeScreen extends StatelessWidget {
               size,
               Color.fromRGBO(129, 110, 217, 1),
               "Create Account",
-              () => Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => HomeScreen()))),
+              () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => LoginScreen(
+                        isLogin: false,
+                      )))),
           customButton(
               size,
               Color.fromRGBO(244, 136, 36, 1),
               "Log In",
-              () => Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => LoginScreen()))),
+              () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => LoginScreen(
+                        isLogin: true,
+                      )))),
         ],
       ),
     );

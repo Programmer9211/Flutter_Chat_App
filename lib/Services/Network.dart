@@ -34,3 +34,43 @@ Future<int> registerNewUser(Map<String, dynamic> map) async {
     return response.statusCode;
   }
 }
+
+Future<Map<String, dynamic>> loginUser(Map<String, dynamic> map) async {
+  var response = await http.post(
+    Uri.http('glacial-shore-29640.herokuapp.com', '/users/login'),
+    body: json.encode(map),
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+    },
+  );
+
+  print(response.body);
+
+  Map<String, dynamic> maps = json.decode(response.body);
+
+  if (maps['msg'] == "Login Sucessful") {
+    print(maps);
+    return maps;
+  } else if (maps['msg'] == "User does't Exist" ||
+      maps['msg'] == "Password is Incorrect") {
+    return maps['msg'];
+  } else {
+    return maps;
+  }
+}
+
+Future sendNotifications(Map<String, dynamic> map) async {
+  var response = await http.post(
+    Uri.http('glacial-shore-29640.herokuapp.com', '/notification/send'),
+    body: json.encode(map),
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+    },
+  );
+
+  if (response.statusCode == 201 || response.statusCode == 200) {
+    print("SendSucessfully");
+  } else {
+    print("An error occured");
+  }
+}
