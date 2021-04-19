@@ -21,11 +21,13 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   ScrollController scrollController;
   final TextEditingController controller = TextEditingController();
-  StreamSubscription subs;
+  StreamSubscription subs, statussubs;
+  String status = "Offline";
 
   @override
   void initState() {
     super.initState();
+    widget.socket.emit("status", widget.recieverId);
     scrollController = ScrollController();
     if (scrollController.hasClients) {
       scrollController.jumpTo(scrollController.position.maxScrollExtent);
@@ -38,6 +40,13 @@ class _ChatScreenState extends State<ChatScreen> {
             recieverId: event['recieverId']));
       });
     });
+
+    statussubs = widget.bloc.statusStream.listen((event) {
+      print(event);
+      setState(() {
+        status = event.toString();
+      });
+    });
   }
 
   List<MessageModel> message = [];
@@ -48,10 +57,13 @@ class _ChatScreenState extends State<ChatScreen> {
 
     setState(() {
       message.add(MessageModel(
-          message: mes, senderId: senderId, recieverId: recieverId));
+        message: mes,
+        senderId: senderId,
+        recieverId: recieverId,
+      ));
     });
 
-    String trimgmail = senderId.substring(0, senderId.length - 10);
+    String trimgmail = recieverId.substring(0, senderId.length - 10);
 
     Map<String, dynamic> map = {
       "username": trimgmail,
@@ -64,6 +76,7 @@ class _ChatScreenState extends State<ChatScreen> {
     if (scrollController.hasClients) {
       scrollController.jumpTo(scrollController.position.maxScrollExtent);
     }
+    widget.socket.emit("status", widget.recieverId);
   }
 
   @override
@@ -71,14 +84,67 @@ class _ChatScreenState extends State<ChatScreen> {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.name),
-      ),
       body: SingleChildScrollView(
           child: Column(
         children: [
           Container(
-            height: size.height / 1.2,
+            height: size.height / 8,
+            width: size.width / 1.1,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  height: size.height / 12.9,
+                  width: size.height / 12.9,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.blue,
+                    image: DecorationImage(
+                        image: NetworkImage(
+                            "https://www.sheknows.com/wp-content/uploads/2020/12/ben-higgins-1.jpg"),
+                        fit: BoxFit.cover),
+                  ),
+                ),
+                Container(
+                  height: size.height / 12,
+                  width: size.width / 1.5,
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                    child: RichText(
+                      text: TextSpan(
+                          text: "${widget.name}\n",
+                          style: TextStyle(
+                            color: Color.fromRGBO(41, 60, 98, 1),
+                            fontSize: size.width / 20,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          children: <TextSpan>[
+                            TextSpan(
+                              text: status,
+                              style: TextStyle(
+                                  color: Color.fromRGBO(41, 60, 98, 1),
+                                  fontSize: size.width / 26),
+                            )
+                          ]),
+                    ),
+                  ),
+                ),
+                Container(
+                  height: size.height / 12,
+                  child: GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Icon(
+                      Icons.close,
+                      color: Color.fromRGBO(41, 60, 98, 1),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
+          Container(
+            height: size.height / 1.275,
             width: size.width,
             child: ListView.builder(
               controller: scrollController,
@@ -95,6 +161,7 @@ class _ChatScreenState extends State<ChatScreen> {
         height: size.height / 15,
         width: size.width / 1.05,
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Expanded(
               child: TextField(
@@ -113,7 +180,10 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
             IconButton(
-                icon: Icon(Icons.send),
+                icon: Icon(
+                  Icons.send,
+                  color: Color.fromRGBO(41, 60, 98, 1),
+                ),
                 onPressed: () => sendMessage(
                     controller.text, widget.senderId, widget.recieverId))
           ],
@@ -127,26 +197,35 @@ class _ChatScreenState extends State<ChatScreen> {
       width: size.width,
       alignment: isme ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        margin: EdgeInsets.all(10),
-        padding: EdgeInsets.all(10),
+        margin: EdgeInsets.symmetric(vertical: 5, horizontal: 8),
+        padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         decoration: BoxDecoration(
-          color: isme ? Colors.amber : Colors.blue,
+          color: isme
+              ? Color.fromRGBO(235, 235, 235, 1)
+              : Color.fromRGBO(255, 216, 214, 1),
           borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(15),
-              topRight: Radius.circular(15),
-              bottomLeft: isme ? Radius.circular(15) : Radius.circular(0),
-              bottomRight: isme ? Radius.circular(0) : Radius.circular(15)),
+              topLeft: Radius.circular(12),
+              topRight: Radius.circular(12),
+              bottomLeft: isme ? Radius.circular(12) : Radius.circular(0),
+              bottomRight: isme ? Radius.circular(0) : Radius.circular(12)),
         ),
         child: Text(
           message,
           style: TextStyle(
-            color: Colors.white,
-            fontSize: size.width / 20,
-            fontWeight: FontWeight.w500,
+            //color: Colors.white,
+            fontSize: size.width / 24,
+            fontWeight: FontWeight.w400,
           ),
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    subs.cancel();
+    statussubs.cancel();
+    super.dispose();
   }
 }
 

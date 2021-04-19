@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'package:chatapp/Authenticate/OtpAuthentication.dart';
 import 'package:chatapp/Screens/HomeScreen.dart';
 import 'package:chatapp/Services/Network.dart';
+import 'package:email_auth/email_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'package:flutter/material.dart';
@@ -8,8 +10,9 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
+  final SharedPreferences prefs;
   final bool isLogin;
-  LoginScreen({this.isLogin});
+  LoginScreen({this.isLogin, this.prefs});
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -28,6 +31,7 @@ class _LoginScreenState extends State<LoginScreen>
   GlobalKey<FormState> _key = GlobalKey<FormState>();
   FirebaseMessaging messaging = FirebaseMessaging.instance;
   FlutterLocalNotificationsPlugin notificationsPlugin;
+  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -35,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen>
     isresize = false;
     buttonAnim = false;
     isLogin = widget.isLogin;
-    getInstance();
+    prefs = widget.prefs;
     permission();
     initMessaging();
 
@@ -70,10 +74,6 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  void getInstance() async {
-    prefs = await SharedPreferences.getInstance();
-  }
-
   String validateEmail(String value) {
     Pattern pattern =
         r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]"
@@ -88,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   void onPressed(Size size) {
     if (validateEmail(_gmail.text) == "Enter a valid email address") {
-      _gmail.text = "@gmail.com";
+      _gmail.text = "${_gmail.text}@gmail.com";
       setState(() {});
       _key.currentState.validate();
     } else {
@@ -113,10 +113,21 @@ class _LoginScreenState extends State<LoginScreen>
         print(map);
         loginUser(map).then((value) {
           Timer(Duration(milliseconds: 300), () {
-            setState(() {
-              width = 1;
-            });
-            textAnim.reverse();
+            if (value['msg'] == "Login Sucessful") {
+              setState(() {
+                width = 1;
+              });
+              textAnim.reverse();
+            } else {
+              isresize = false;
+              buttonAnim = false;
+              contH = null;
+              contW = null;
+              setState(() {});
+              _scaffoldKey.currentState;
+              print(value['msg']);
+            }
+
             Timer(Duration(milliseconds: 401), () async {
               if (value['msg'] == "Login Sucessful") {
                 await prefs
@@ -166,20 +177,14 @@ class _LoginScreenState extends State<LoginScreen>
                 width = 0;
                 setState(() {});
                 controller.reverse();
-
-                await prefs
-                    .setString('username', _name.text)
-                    .then((value) => print(value));
-                await prefs.setString('gmail', _gmail.text);
-
-                await messaging.subscribeToTopic(_gmail.text);
-
-                Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(
-                        builder: (context) => HomeScreen(
-                              prefs: prefs,
-                            )),
-                    (Route<dynamic> route) => false);
+                sendOtp().then((value) => Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (context) => OtpAuthentication(
+                                gmail: _gmail.text,
+                                name: _name.text,
+                                prefs: prefs,
+                              )),
+                    ));
               }
             });
           });
@@ -188,11 +193,19 @@ class _LoginScreenState extends State<LoginScreen>
     }
   }
 
+  Future<bool> sendOtp() async {
+    EmailAuth.sessionName = "Chat App!";
+    bool result = await EmailAuth.sendOtp(receiverMail: _gmail.text);
+
+    return result;
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
+      key: _scaffoldKey,
       body: Container(
           height: size.height,
           width: size.width,
@@ -208,10 +221,10 @@ class _LoginScreenState extends State<LoginScreen>
                 Text(
                   'Chat App!',
                   style: TextStyle(
-                    fontSize: size.width / 11,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                  ),
+                      fontSize: size.width / 11,
+                      fontWeight: FontWeight.w500,
+                      //color: Color.fromRGBO(41, 60, 98, 1),
+                      color: Colors.white),
                 ),
                 SizedBox(
                   height: size.height / 7,
@@ -219,12 +232,17 @@ class _LoginScreenState extends State<LoginScreen>
                 Material(
                   elevation: 25,
                   shape: RoundedRectangleBorder(
+                    // side: BorderSide(
+                    //   width: 2,
+                    //   color: Color.fromRGBO(41, 60, 98, 1),
+                    // ),
                     borderRadius: BorderRadius.circular(15),
                   ),
-                  //color: Color.fromRGBO(81, 223, 232, 1),
+                  // color: Color.fromRGBO(81, 223, 232, 1),
                   child: Container(
                     height: size.height / 1.9,
                     width: size.width / 1.2,
+                    decoration: BoxDecoration(),
                     child: Column(
                       //crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -238,6 +256,7 @@ class _LoginScreenState extends State<LoginScreen>
                               style: TextStyle(
                                 fontSize: size.width / 18,
                                 fontWeight: FontWeight.w500,
+                                //color: Color.fromRGBO(41, 60, 98, 1),
                                 color: Color.fromRGBO(222, 139, 88, 1),
                               ),
                             ),
@@ -286,7 +305,7 @@ class _LoginScreenState extends State<LoginScreen>
                               ? Container()
                               : Form(
                                   key: _key,
-                                  autovalidateMode: AutovalidateMode.always,
+                                  //autovalidateMode: AutovalidateMode.always,
                                   child: TextFormField(
                                     validator: validateEmail,
                                     controller: _gmail,
@@ -369,6 +388,8 @@ class _LoginScreenState extends State<LoginScreen>
                                             ),
                                             primary:
                                                 Color.fromRGBO(222, 139, 88, 1),
+                                            // primary:
+                                            //     Color.fromRGBO(41, 60, 98, 1),
                                           ),
                                         ),
                                 ),
@@ -382,47 +403,55 @@ class _LoginScreenState extends State<LoginScreen>
                         SizedBox(
                           height: size.height / 40,
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "New User ",
-                              style: TextStyle(
-                                fontSize: size.width / 25,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                if (isLogin) {
-                                  setState(() {
-                                    _gmail.text = "@gmail.com";
-                                    isLogin = !isLogin;
-                                    contH = size.height / 18;
-                                    contW = size.width / 3;
-                                  });
-                                } else {
-                                  setState(() {
-                                    _gmail.text = "@gmail.com";
-                                    isLogin = !isLogin;
-                                    contH = size.height / 18;
-                                    contW = size.width / 5;
-                                  });
-                                }
-                                // textAnim.reset();
-                                // textAnim.forward();
-                              },
-                              child: Text(
-                                isLogin ? "Create Account" : "Sign In",
-                                style: TextStyle(
-                                  fontSize: size.width / 25,
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.w500,
+                        AnimatedBuilder(
+                            animation: textAnim,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "New User ",
+                                  style: TextStyle(
+                                    fontSize: size.width / 25,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
-                              ),
-                            )
-                          ],
-                        )
+                                GestureDetector(
+                                  onTap: () {
+                                    if (isLogin) {
+                                      setState(() {
+                                        // _gmail.text = "@gmail.com";
+                                        isLogin = !isLogin;
+                                        contH = size.height / 18;
+                                        contW = size.width / 3;
+                                      });
+                                    } else {
+                                      setState(() {
+                                        // _gmail.text = "@gmail.com";
+                                        isLogin = !isLogin;
+                                        contH = size.height / 18;
+                                        contW = size.width / 5;
+                                      });
+                                    }
+                                    // textAnim.reset();
+                                    // textAnim.forward();
+                                  },
+                                  child: Text(
+                                    isLogin ? "Create Account" : "Sign In",
+                                    style: TextStyle(
+                                      fontSize: size.width / 25,
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                )
+                              ],
+                            ),
+                            builder: (context, child) {
+                              return ScaleTransition(
+                                scale: textAnim,
+                                child: child,
+                              );
+                            })
                       ],
                     ),
                   ),
@@ -481,7 +510,7 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   void permission() async {
-    NotificationSettings sett = await messaging.requestPermission(
+    await messaging.requestPermission(
         alert: true,
         announcement: false,
         badge: true,

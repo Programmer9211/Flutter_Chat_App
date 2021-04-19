@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class Profile extends StatefulWidget {
-  String name, gmail;
+  final String name, gmail;
 
   Profile({this.name, this.gmail});
 
@@ -43,7 +43,7 @@ class _ProfileState extends State<Profile> with SingleTickerProviderStateMixin {
               ),
               Text("Your Profile",
                   style: TextStyle(
-                    //color: Colors.white,
+                    color: Color.fromRGBO(41, 60, 98, 1),
                     fontSize: size.width / 18,
                     fontWeight: FontWeight.w500,
                   )),
@@ -72,7 +72,7 @@ class _ProfileState extends State<Profile> with SingleTickerProviderStateMixin {
               Text(
                 widget.name,
                 style: TextStyle(
-                  //  color: Colors.white,
+                  color: Color.fromRGBO(41, 60, 98, 1),
                   fontSize: size.width / 16,
                   fontWeight: FontWeight.w500,
                 ),
@@ -83,7 +83,7 @@ class _ProfileState extends State<Profile> with SingleTickerProviderStateMixin {
               Text(
                 widget.gmail,
                 style: TextStyle(
-                  //  color: Colors.white,
+                  color: Color.fromRGBO(41, 60, 98, 1),
                   fontSize: size.width / 16,
                   fontWeight: FontWeight.w500,
                 ),

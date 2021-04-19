@@ -8,10 +8,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:socket_io_client/socket_io_client.dart';
 
 class Find extends StatefulWidget {
+  final Function hompageFunction;
   final SharedPreferences prefs;
   final Socket socket;
   final ChatBloc bloc;
-  Find({this.prefs, this.socket, this.bloc});
+  final List chatList;
+  Find(
+      {this.prefs,
+      this.socket,
+      this.bloc,
+      this.chatList,
+      this.hompageFunction});
 
   @override
   _FindState createState() => _FindState();
@@ -22,6 +29,7 @@ class _FindState extends State<Find> with SingleTickerProviderStateMixin {
   Map<String, dynamic> userMap;
   double width;
   bool isSearching = false;
+  bool isback = false;
   Animation animation;
   AnimationController animationController;
 
@@ -69,6 +77,33 @@ class _FindState extends State<Find> with SingleTickerProviderStateMixin {
     }
   }
 
+  void onChat() {
+    if (userMap['gmail'] != widget.prefs.getString('gmail')) {
+      setState(() {
+        isback = true;
+      });
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            bloc: widget.bloc,
+            name: userMap['username'],
+            recieverId: userMap['gmail'],
+            senderId: widget.prefs.getString('gmail'),
+            socket: widget.socket,
+          ),
+        ),
+      );
+
+      if (widget.chatList.contains(userMap['gmail']) == false) {
+        updateRecentChats(widget.prefs.getString('gmail'), userMap['gmail'])
+            .then((value) => widget.hompageFunction());
+      }
+    } else {
+      print("You cannot message yourself");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -113,7 +148,7 @@ class _FindState extends State<Find> with SingleTickerProviderStateMixin {
                               height: size.height / 20,
                               width: width,
                               decoration: BoxDecoration(
-                                color: Colors.orange,
+                                color: Color.fromRGBO(41, 60, 98, 1),
                                 borderRadius: BorderRadius.circular(200),
                               ),
                               duration: Duration(milliseconds: 200),
@@ -121,33 +156,80 @@ class _FindState extends State<Find> with SingleTickerProviderStateMixin {
                                   ? null
                                   : ElevatedButton(
                                       onPressed: () => onSearch(context),
+                                      style: ElevatedButton.styleFrom(
+                                        primary: Color.fromRGBO(41, 60, 98, 1),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                      ),
                                       child: Text(
                                         "Search",
                                         style: TextStyle(
-                                            color: Colors.white, fontSize: 16),
+                                            color: Colors.white,
+                                            fontSize: size.width / 24),
                                       )),
                             ),
                       SizedBox(
                         height: size.height / 18,
                       ),
                       userMap == null
-                          ? Container()
+                          ? Container(
+                              child: Text(
+                                "Chat with People using their registered Gmail id.",
+                                style: TextStyle(
+                                  fontSize: size.width / 25,
+                                  color: Color.fromRGBO(41, 60, 98, 1),
+                                ),
+                              ),
+                            )
                           : (userMap.containsKey('msg')
                               ? Container(
                                   child: Text(userMap['msg']),
                                 )
-                              : ListTile(
-                                  onTap: () => Navigator.of(context).push(
-                                      MaterialPageRoute(
-                                          builder: (_) => ChatScreen(
-                                              bloc: widget.bloc,
-                                              name: userMap['username'],
-                                              recieverId: userMap['gmail'],
-                                              senderId: widget.prefs
-                                                  .getString('gmail'),
-                                              socket: widget.socket))),
-                                  title: Text(userMap['username']),
-                                  subtitle: Text(userMap['gmail']),
+                              : Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8.0),
+                                  child: Material(
+                                    elevation: 5,
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: ListTile(
+                                      title: Text(
+                                        userMap['username'],
+                                        style: TextStyle(
+                                          color: Color.fromRGBO(41, 60, 98, 1),
+                                        ),
+                                      ),
+                                      leading: Container(
+                                        height: size.height / 15,
+                                        width: size.height / 15,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          image: DecorationImage(
+                                              image: NetworkImage(
+                                                  "https://www.sheknows.com/wp-content/uploads/2020/12/ben-higgins-1.jpg"),
+                                              fit: BoxFit.cover),
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        userMap['gmail'],
+                                        style: TextStyle(
+                                          color: Color.fromRGBO(41, 60, 98, 1),
+                                        ),
+                                      ),
+                                      trailing: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            primary:
+                                                Color.fromRGBO(41, 60, 98, 1),
+                                          ),
+                                          onPressed: onChat,
+                                          child: Text(
+                                            "Chat",
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          )),
+                                    ),
+                                  ),
                                 )),
                     ],
                   ),
@@ -159,11 +241,13 @@ class _FindState extends State<Find> with SingleTickerProviderStateMixin {
                   );
                 }),
             floatingActionButton:
-                animationController.status == AnimationStatus.reverse
+                animationController.status == AnimationStatus.reverse || isback
                     ? FloatingActionButton(
+                        backgroundColor: Color.fromRGBO(41, 60, 98, 1),
                         onPressed: () {
                           setState(() {
                             userMap = null;
+                            isback = false;
                             animationController.reset();
                             animationController.forward();
                           });

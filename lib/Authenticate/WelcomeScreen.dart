@@ -2,6 +2,9 @@ import 'package:chatapp/Authenticate/Login.dart';
 import 'package:flutter/material.dart';
 
 class WelcomeScreen extends StatelessWidget {
+  final prefs;
+  WelcomeScreen(this.prefs);
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -17,11 +20,11 @@ class WelcomeScreen extends StatelessWidget {
             height: size.height / 3,
             width: size.width,
             decoration: BoxDecoration(
-                // image: DecorationImage(
-                //     image: NetworkImage(
-                //         'https://image.shutterstock.com/image-vector/vector-illustration-flat-linear-style-260nw-1147927685.jpg'),
-                //     fit: BoxFit.cover),
-                ),
+              image: DecorationImage(
+                  image: NetworkImage(
+                      'https://image.shutterstock.com/image-vector/vector-illustration-flat-linear-style-260nw-1147927685.jpg'),
+                  fit: BoxFit.cover),
+            ),
           ),
           SizedBox(
             height: size.height / 20,
@@ -57,6 +60,7 @@ class WelcomeScreen extends StatelessWidget {
               "Create Account",
               () => Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => LoginScreen(
+                        prefs: prefs,
                         isLogin: false,
                       )))),
           customButton(
@@ -65,6 +69,7 @@ class WelcomeScreen extends StatelessWidget {
               "Log In",
               () => Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => LoginScreen(
+                        prefs: prefs,
                         isLogin: true,
                       )))),
         ],

@@ -5,4 +5,9 @@ class ChatBloc {
       StreamController<Map<String, dynamic>>.broadcast();
 
   Stream<Map<String, dynamic>> get stream => controller.stream;
+
+  StreamController<String> statusController =
+      StreamController<String>.broadcast();
+
+  Stream<String> get statusStream => statusController.stream;
 }
