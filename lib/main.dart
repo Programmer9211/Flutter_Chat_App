@@ -13,14 +13,13 @@ Future main() async {
 }
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // If you're going to use other Firebase services in the background, such as Firestore,
-  // make sure you call `initializeApp` before using other Firebase services.
   await Firebase.initializeApp();
   print('Handling a background message ${message.messageId}');
 }
 
+// ignore: must_be_immutable
 class MyApp extends StatelessWidget {
-  final prefs;
+  final SharedPreferences prefs;
   MyApp(this.prefs);
 
   final Map<int, Color> color = {
@@ -42,7 +41,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     custom = MaterialColor(0xFF999999, color);
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Chat App!',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: custom,

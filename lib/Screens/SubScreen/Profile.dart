@@ -26,6 +26,22 @@ class _ProfileState extends State<Profile> with SingleTickerProviderStateMixin {
     animationController.forward();
   }
 
+  void onClick() {
+    showDialog(
+        context: context,
+        builder: (_) => Dialog(
+              child: Column(
+                children: [
+                  // ignore: deprecated_member_use
+                  FlatButton(
+                    onPressed: () {},
+                    child: Text("Upload"),
+                  ),
+                ],
+              ),
+            ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -50,20 +66,23 @@ class _ProfileState extends State<Profile> with SingleTickerProviderStateMixin {
               SizedBox(
                 height: size.height / 30,
               ),
-              Material(
-                elevation: 15,
-                borderRadius: BorderRadius.circular(15),
-                child: Container(
-                  height: size.height / 3,
-                  width: size.width / 1.5,
-                  decoration: BoxDecoration(
-                      //shape: BoxShape.circle,
+              GestureDetector(
+                onTap: onClick,
+                child: Material(
+                  elevation: 15,
+                  borderRadius: BorderRadius.circular(15),
+                  child: Container(
+                    height: size.height / 3,
+                    width: size.width / 1.5,
+                    decoration: BoxDecoration(
                       color: Colors.blue,
                       borderRadius: BorderRadius.circular(15),
                       image: DecorationImage(
                           image: NetworkImage(
                               'https://www.sheknows.com/wp-content/uploads/2020/12/ben-higgins-1.jpg'),
-                          fit: BoxFit.cover)),
+                          fit: BoxFit.cover),
+                    ),
+                  ),
                 ),
               ),
               SizedBox(

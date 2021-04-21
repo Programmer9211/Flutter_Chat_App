@@ -1,34 +1,64 @@
+import 'package:chatapp/Dialoges/Dialgog.dart';
 import 'package:chatapp/Screens/HomeScreen.dart';
+import 'package:chatapp/Services/Network.dart';
 import 'package:email_auth/email_auth.dart';
 import 'package:flutter/material.dart';
 
 class OtpAuthentication extends StatelessWidget {
-  final String gmail, name;
+  final String gmail, name, password;
   final prefs, messaging;
 
-  OtpAuthentication({this.gmail, this.name, this.prefs, this.messaging});
+  OtpAuthentication(
+      {this.gmail, this.name, this.prefs, this.messaging, this.password});
 
   final TextEditingController _otp = TextEditingController();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  void onPressed(BuildContext context) async {
+  void onPressed(BuildContext context) {
     bool check = EmailAuth.validate(receiverMail: gmail, userOTP: _otp.text);
 
     if (check) {
-      await prefs.setString('username', name).then((value) => print(value));
-      await prefs.setString('gmail', gmail);
+      Map<String, dynamic> map = {
+        "username": name,
+        "gmail": gmail,
+        "password": password,
+      };
 
-      String topic = gmail.substring(0, gmail.length - 10);
+      registerNewUser(map).then((value) async {
+        if (value == 200 || value == 201) {
+          await prefs.setString('username', name).then((value) => print(value));
+          await prefs.setString('gmail', gmail);
 
-      await messaging.subscribeToTopic(topic);
-      Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-              builder: (context) => HomeScreen(
-                    prefs: prefs,
-                  )),
-          (Route<dynamic> route) => false);
-      print("Correct OTP");
+          String topic = gmail.substring(0, gmail.length - 10);
+
+          await messaging.subscribeToTopic(topic);
+          Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                  builder: (context) => HomeScreen(
+                        prefs: prefs,
+                      )),
+              (Route<dynamic> route) => false);
+          print("Correct OTP");
+        } else {
+          showDialog(
+              context: context,
+              builder: (_) => CustomDialog(
+                    title: "Email Verification",
+                    content:
+                        "The email you are trying to create account is already registered",
+                  ));
+        }
+      });
     } else {
-      print("Please enter Correct Otp");
+      _scaffoldKey.currentState
+          // ignore: deprecated_member_use
+          .showSnackBar(SnackBar(content: Text("You have enterd wrong OTP")));
+      // showDialog(
+      //     context: context,
+      //     builder: (_) => CustomDialog(
+      //           title: "OTP",
+      //           content: "You have entered wrong otp",
+      //         ));
     }
   }
 

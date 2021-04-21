@@ -91,6 +91,10 @@ class _LoginScreenState extends State<LoginScreen>
       _gmail.text = "${_gmail.text}@gmail.com";
       setState(() {});
       _key.currentState.validate();
+    } else if (_password.text.length < 8) {
+      // ignore: deprecated_member_use
+      _scaffoldKey.currentState.showSnackBar(
+          SnackBar(content: Text("Password must be atleast 8 character long")));
     } else {
       FocusScope.of(context).unfocus();
       setState(() {
@@ -105,15 +109,15 @@ class _LoginScreenState extends State<LoginScreen>
       });
 
       if (isLogin) {
-        Map<String, dynamic> map = {
+        Map<String, dynamic> maps = {
           "gmail": _gmail.text,
           "password": _password.text,
         };
 
-        print(map);
-        loginUser(map).then((value) {
+        print(maps);
+        loginUser(maps).then((map) {
           Timer(Duration(milliseconds: 300), () {
-            if (value['msg'] == "Login Sucessful") {
+            if (map['msg'] == "Login Sucessful") {
               setState(() {
                 width = 1;
               });
@@ -124,21 +128,19 @@ class _LoginScreenState extends State<LoginScreen>
               contH = null;
               contW = null;
               setState(() {});
-              _scaffoldKey.currentState;
-              print(value['msg']);
             }
 
             Timer(Duration(milliseconds: 401), () async {
-              if (value['msg'] == "Login Sucessful") {
+              if (map['msg'] == "Login Sucessful") {
                 await prefs
-                    .setString('username', value['data']['username'])
+                    .setString('username', map['data']['username'])
                     .then((value) => print(value));
-                await prefs.setString('gmail', value['data']['gmail']);
+                await prefs.setString('gmail', map['data']['gmail']);
                 controller.reverse();
                 width = 0;
                 setState(() {});
 
-                String gmail = value['data']['gmail'];
+                String gmail = map['data']['gmail'];
 
                 String topic = gmail.substring(0, gmail.length - 10);
 
@@ -152,43 +154,62 @@ class _LoginScreenState extends State<LoginScreen>
                               prefs: prefs,
                             )),
                     (Route<dynamic> route) => false);
+              } else if (map['msg'] == "User doesn't Exist") {
+                // ignore: deprecated_member_use
+                _scaffoldKey.currentState.showSnackBar(
+                    SnackBar(content: Text("User doesn't Exist")));
+              } else if (map['msg'] == "Password is Incorrect") {
+                // ignore: deprecated_member_use
+                _scaffoldKey.currentState.showSnackBar(
+                    SnackBar(content: Text("Password is Incorrect")));
+              } else {
+                // ignore: deprecated_member_use
+                _scaffoldKey.currentState.showSnackBar(
+                    SnackBar(content: Text("An Unexpected error occured")));
               }
+              print(map['msg']);
             });
           });
         });
       } else {
-        Map<String, dynamic> map = {
-          "username": _name.text,
-          "gmail": _gmail.text,
-          "password": _password.text,
-        };
-
-        print(map);
-        registerNewUser(map).then((value) {
-          Timer(Duration(milliseconds: 300), () {
-            if (value == 200 || value == 201) {
-              setState(() {
-                width = 1;
-              });
-            }
-            textAnim.reverse();
-            Timer(Duration(milliseconds: 401), () async {
-              if (value == 200 || value == 201) {
-                width = 0;
-                setState(() {});
-                controller.reverse();
-                sendOtp().then((value) => Navigator.of(context).push(
-                      MaterialPageRoute(
-                          builder: (context) => OtpAuthentication(
-                                gmail: _gmail.text,
-                                name: _name.text,
-                                prefs: prefs,
-                              )),
-                    ));
+        if (_name.text.length == 0) {
+          // ignore: deprecated_member_use
+          _scaffoldKey.currentState.showSnackBar(
+              SnackBar(content: Text("Please Enter a valid name")));
+        } else if (_name.text.length > 10) {
+          // ignore: deprecated_member_use
+          _scaffoldKey.currentState.showSnackBar(
+              SnackBar(content: Text("Name should not exceed 10 characters")));
+        } else {
+          sendOtp().then((value) {
+            Timer(Duration(milliseconds: 300), () {
+              if (value) {
+                setState(() {
+                  width = 1;
+                });
+                textAnim.reverse();
               }
+
+              Timer(Duration(milliseconds: 401), () async {
+                if (value) {
+                  width = 0;
+                  setState(() {});
+                  controller.reverse();
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                        builder: (context) => OtpAuthentication(
+                              gmail: _gmail.text,
+                              name: _name.text,
+                              prefs: prefs,
+                              password: _password.text,
+                              messaging: messaging,
+                            )),
+                  );
+                }
+              });
             });
           });
-        });
+        }
       }
     }
   }
@@ -492,11 +513,13 @@ class _LoginScreenState extends State<LoginScreen>
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       RemoteNotification notification = message.notification;
-      showNotifications(notification.title, notification.body);
+      print(notification.title);
+      showNotifications(
+          notification.title, notification.body, notification.hashCode);
     });
   }
 
-  void showNotifications(String title, String body) async {
+  void showNotifications(String title, String body, int hashCode) async {
     var andDetails = AndroidNotificationDetails(
         "channelId", "channelName", "channelDescription");
 
@@ -505,8 +528,12 @@ class _LoginScreenState extends State<LoginScreen>
     var generalNotifiDDetails =
         NotificationDetails(android: andDetails, iOS: iosDetails);
 
-    await notificationsPlugin.show(0, title, body, generalNotifiDDetails,
-        payload: "Notification");
+    await notificationsPlugin.show(
+      hashCode,
+      title,
+      body,
+      generalNotifiDDetails,
+    );
   }
 
   void permission() async {

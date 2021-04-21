@@ -30,7 +30,7 @@ Future<int> registerNewUser(Map<String, dynamic> map) async {
     print("Register Sucessfully");
     return response.statusCode;
   } else {
-    print("Error Occured");
+    print(response.body);
     return response.statusCode;
   }
 }
@@ -54,7 +54,7 @@ Future<Map<String, dynamic>> loginUser(Map<String, dynamic> map) async {
       return maps;
     } else if (maps['msg'] == "User does't Exist" ||
         maps['msg'] == "Password is Incorrect") {
-      return maps['msg'];
+      return maps;
     } else {
       return maps;
     }
@@ -73,7 +73,7 @@ Future sendNotifications(Map<String, dynamic> map) async {
   );
 
   if (response.statusCode == 201 || response.statusCode == 200) {
-    print("SendSucessfully");
+    print(response.body);
   } else {
     print("An error occured");
   }

@@ -19,19 +19,21 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  ScrollController scrollController;
+  ScrollController scrollController = ScrollController();
   final TextEditingController controller = TextEditingController();
   StreamSubscription subs, statussubs;
+  FocusNode _focus = FocusNode();
   String status = "Offline";
 
   @override
   void initState() {
     super.initState();
+    _focus.addListener(() {
+      print("Changed");
+    });
+    widget.bloc.idController.add(widget.recieverId);
     widget.socket.emit("status", widget.recieverId);
-    scrollController = ScrollController();
-    if (scrollController.hasClients) {
-      scrollController.jumpTo(scrollController.position.maxScrollExtent);
-    }
+
     subs = widget.bloc.stream.listen((event) {
       setState(() {
         message.add(MessageModel(
@@ -39,6 +41,11 @@ class _ChatScreenState extends State<ChatScreen> {
             senderId: event['senderId'],
             recieverId: event['recieverId']));
       });
+      scrollController.animateTo(
+        scrollController.position.maxScrollExtent,
+        duration: Duration(milliseconds: 200),
+        curve: Curves.ease,
+      );
     });
 
     statussubs = widget.bloc.statusStream.listen((event) {
@@ -52,31 +59,37 @@ class _ChatScreenState extends State<ChatScreen> {
   List<MessageModel> message = [];
 
   void sendMessage(String mes, String senderId, String recieverId) {
-    widget.socket.emit("message",
-        {"message": mes, "senderId": senderId, "recieverId": recieverId});
+    if (controller.text.isNotEmpty) {
+      widget.socket.emit("message",
+          {"message": mes, "senderId": senderId, "recieverId": recieverId});
 
-    setState(() {
-      message.add(MessageModel(
-        message: mes,
-        senderId: senderId,
-        recieverId: recieverId,
-      ));
-    });
+      setState(() {
+        message.add(MessageModel(
+          message: mes,
+          senderId: senderId,
+          recieverId: recieverId,
+        ));
+      });
 
-    String trimgmail = recieverId.substring(0, senderId.length - 10);
+      String trimgmail = recieverId.substring(0, recieverId.length - 10);
 
-    Map<String, dynamic> map = {
-      "username": trimgmail,
-      "title": widget.name,
-      "body": mes
-    };
+      print(trimgmail);
 
-    sendNotifications(map);
-    controller.clear();
-    if (scrollController.hasClients) {
-      scrollController.jumpTo(scrollController.position.maxScrollExtent);
+      Map<String, dynamic> map = {
+        "username": trimgmail.toString(),
+        "title": widget.name,
+        "body": mes
+      };
+
+      sendNotifications(map);
+      controller.clear();
+      scrollController.animateTo(
+        scrollController.position.maxScrollExtent,
+        duration: Duration(milliseconds: 200),
+        curve: Curves.ease,
+      );
+      widget.socket.emit("status", widget.recieverId);
     }
-    widget.socket.emit("status", widget.recieverId);
   }
 
   @override
@@ -165,6 +178,10 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Expanded(
               child: TextField(
+                // onTap: () {
+                //   print("Tapped");
+                // },
+                focusNode: _focus,
                 controller: controller,
                 decoration: InputDecoration(
                   fillColor: Colors.grey,

@@ -10,4 +10,8 @@ class ChatBloc {
       StreamController<String>.broadcast();
 
   Stream<String> get statusStream => statusController.stream;
+
+  StreamController<String> idController = StreamController<String>.broadcast();
+
+  Stream<String> get idStream => idController.stream;
 }

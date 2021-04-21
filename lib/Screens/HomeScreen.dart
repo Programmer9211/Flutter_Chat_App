@@ -20,7 +20,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   IO.Socket sockets;
-  final _bloc = ChatBloc();
+  final ChatBloc _bloc = ChatBloc();
   FirebaseMessaging messenging = FirebaseMessaging.instance;
   Map<String, dynamic> fill = Map<String, dynamic>();
   List<Map<String, dynamic>> userChatList;
@@ -29,19 +29,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.inactive) {
-      sockets.emit("disconnect", widget.prefs.getString('gmail'));
+      sockets.emit("signout", widget.prefs.getString('gmail'));
       print(state);
     } else if (state == AppLifecycleState.resumed) {
       sockets.emit("signin", widget.prefs.getString('gmail'));
       print(state);
     } else if (state == AppLifecycleState.detached) {
-      sockets.emit("disconnect", widget.prefs.getString('gmail'));
+      sockets.emit("signout", widget.prefs.getString('gmail'));
       print(state);
     } else if (state == AppLifecycleState.paused) {
-      sockets.emit("disconnect", widget.prefs.getString('gmail'));
+      sockets.emit("signout", widget.prefs.getString('gmail'));
       print(state);
     } else {
-      sockets.emit("disconnect", widget.prefs.getString('gmail'));
+      sockets.emit("signout", widget.prefs.getString('gmail'));
       print(state);
     }
   }
@@ -90,11 +90,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         print(msg);
         _bloc.controller.add(msg);
       });
-      sockets.on("userstatus", (data) {
-        print(data);
-        _bloc.statusController.add(data.toString());
+      _bloc.idStream.listen((event) {
+        print(event);
+        sockets.on(event, (data) {
+          print(data);
+          _bloc.statusController.add(data.toString());
+        });
       });
     });
+
     print(sockets.connected);
     sockets.emit("login", widget.prefs.getString('gmail'));
     sockets.emit("signin", widget.prefs.getString('gmail'));
@@ -117,15 +121,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   String gmail = widget.prefs.getString('gmail');
                   await widget.prefs.clear().then((value) async {
                     if (value) {
-                      sockets.emit(
-                          "disconnect", widget.prefs.getString('gmail'));
+                      sockets.emit("signout", gmail);
                       String topic = gmail.substring(0, gmail.length - 10);
 
                       await messenging.unsubscribeFromTopic(topic).then(
-                          (value) => Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                  builder: (_) => WelcomeScreen(widget.prefs)),
-                              (Route<dynamic> route) => false));
+                            (value) => Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        WelcomeScreen(widget.prefs)),
+                                (Route<dynamic> route) => false),
+                          );
                     }
                   });
                 },
@@ -134,7 +139,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 width: MediaQuery.of(context).size.width / 20,
               ),
             ],
-            leading: null,
             backgroundColor: Colors.white,
             //backgroundColor: Color.fromRGBO(255, 171, 55, 1),
             title: Text(
@@ -170,7 +174,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     Icons.account_box,
                     color: Color.fromRGBO(41, 60, 98, 1),
                   ),
-                  //text: "Profile",
                   child: Text(
                     "Profile",
                     style: TextStyle(
@@ -184,11 +187,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           body: TabBarView(
             children: [
               Find(
-                  hompageFunction: getUserList,
-                  socket: sockets,
-                  prefs: widget.prefs,
-                  bloc: _bloc,
-                  chatList: isUserAvalible),
+                hompageFunction: getUserList,
+                socket: sockets,
+                prefs: widget.prefs,
+                bloc: _bloc,
+                chatList: isUserAvalible,
+              ),
               RecentChats(
                 chatList: userChatList,
                 socket: sockets,
@@ -202,5 +206,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ],
           ),
         ));
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
