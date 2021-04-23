@@ -91,6 +91,7 @@ class _FindState extends State<Find> with SingleTickerProviderStateMixin {
             recieverId: userMap['gmail'],
             senderId: widget.prefs.getString('gmail'),
             socket: widget.socket,
+            imageUrl: userMap['image'],
           ),
         ),
       );
@@ -206,8 +207,11 @@ class _FindState extends State<Find> with SingleTickerProviderStateMixin {
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           image: DecorationImage(
-                                              image: NetworkImage(
-                                                  "https://www.sheknows.com/wp-content/uploads/2020/12/ben-higgins-1.jpg"),
+                                              image: NetworkImage(userMap[
+                                                          'image'] ==
+                                                      ""
+                                                  ? "https://www.sheknows.com/wp-content/uploads/2020/12/ben-higgins-1.jpg"
+                                                  : userMap['image']),
                                               fit: BoxFit.cover),
                                         ),
                                       ),

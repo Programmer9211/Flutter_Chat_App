@@ -7,12 +7,18 @@ import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart';
 
 class ChatScreen extends StatefulWidget {
-  final String name, recieverId, senderId;
+  final String name, recieverId, senderId, imageUrl;
   final Socket socket;
   final ChatBloc bloc;
 
-  ChatScreen(
-      {this.name, this.recieverId, this.senderId, this.socket, this.bloc});
+  ChatScreen({
+    this.name,
+    this.recieverId,
+    this.senderId,
+    this.socket,
+    this.bloc,
+    this.imageUrl,
+  });
 
   @override
   _ChatScreenState createState() => _ChatScreenState();
@@ -114,7 +120,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: Colors.blue,
                     image: DecorationImage(
                         image: NetworkImage(
-                            "https://www.sheknows.com/wp-content/uploads/2020/12/ben-higgins-1.jpg"),
+                          widget.imageUrl == ""
+                              ? "https://www.sheknows.com/wp-content/uploads/2020/12/ben-higgins-1.jpg"
+                              : widget.imageUrl,
+                        ),
                         fit: BoxFit.cover),
                   ),
                 ),
@@ -176,23 +185,28 @@ class _ChatScreenState extends State<ChatScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Expanded(
+            Container(
+              height: size.height / 15,
+              width: size.width / 1.215,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.grey,
+                border: Border.all(
+                  width: 1,
+                  color: Colors.grey,
+                ),
+              ),
               child: TextField(
-                // onTap: () {
-                //   print("Tapped");
-                // },
                 focusNode: _focus,
                 controller: controller,
                 decoration: InputDecoration(
-                  fillColor: Colors.grey,
+                  isDense: true,
                   filled: true,
                   hintStyle: TextStyle(
                     color: Colors.white,
                   ),
                   hintText: "Send Message",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  border: InputBorder.none,
                 ),
               ),
             ),

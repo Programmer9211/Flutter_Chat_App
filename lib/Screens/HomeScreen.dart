@@ -60,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       isUserAvalible = [];
     });
     recentChats(widget.prefs.getString('gmail')).then((chatList) {
+      print(widget.prefs.getString('gmail'));
       if (chatList != null) {
         for (int i = 0; i <= chatList.length - 1; i++) {
           isUserAvalible.add(chatList[i]['chats']);
@@ -118,6 +119,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   color: Color.fromRGBO(41, 60, 98, 1),
                 ),
                 onPressed: () async {
+                  showDialog(
+                      context: context,
+                      builder: (_) => Container(
+                            height: MediaQuery.of(context).size.height,
+                            width: MediaQuery.of(context).size.width,
+                            alignment: Alignment.center,
+                            child: Container(
+                              height: MediaQuery.of(context).size.height / 15,
+                              width: MediaQuery.of(context).size.height / 15,
+                              child: CircularProgressIndicator(),
+                            ),
+                          ));
+
                   String gmail = widget.prefs.getString('gmail');
                   await widget.prefs.clear().then((value) async {
                     if (value) {
@@ -202,14 +216,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               Profile(
                 name: widget.prefs.getString('username'),
                 gmail: widget.prefs.getString('gmail'),
+                prefs: widget.prefs,
               )
             ],
           ),
         ));
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }

@@ -1,9 +1,16 @@
+import 'dart:io';
+
+import 'package:chatapp/Services/Network.dart';
+import 'package:firebase_storage/firebase_storage.dart' as firebaseStorage;
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Profile extends StatefulWidget {
   final String name, gmail;
+  final SharedPreferences prefs;
 
-  Profile({this.name, this.gmail});
+  Profile({this.name, this.gmail, this.prefs});
 
   @override
   _ProfileState createState() => _ProfileState();
@@ -12,6 +19,42 @@ class Profile extends StatefulWidget {
 class _ProfileState extends State<Profile> with SingleTickerProviderStateMixin {
   Animation animation;
   AnimationController animationController;
+  File imageFile;
+
+  Future getImageFile() async {
+    final imagepicker = ImagePicker();
+
+    await imagepicker.getImage(source: ImageSource.gallery).then((value) {
+      setState(() {
+        imageFile = File(value.path);
+      });
+      uploadImage();
+    });
+  }
+
+  Future uploadImage() async {
+    firebaseStorage.Reference ref =
+        firebaseStorage.FirebaseStorage.instance.ref().child('images/');
+
+    firebaseStorage.UploadTask uploadTask = ref.putFile(imageFile);
+
+    await uploadTask.snapshot.ref.getDownloadURL().then((value) {
+      if (value != null) {
+        print(value);
+        Map<String, dynamic> map = {"gmail": widget.gmail, "image": value};
+        uploadImageLink(map).then((maps) async {
+          print(maps);
+          if (maps['msg'] == "Image Updated Sucessfully") {
+            await widget.prefs.setString('image', value).then((value) {
+              setState(() {});
+            });
+          }
+        });
+      } else {
+        print("Error on uploading image");
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -27,17 +70,39 @@ class _ProfileState extends State<Profile> with SingleTickerProviderStateMixin {
   }
 
   void onClick() {
+    final size = MediaQuery.of(context).size;
+
     showDialog(
         context: context,
         builder: (_) => Dialog(
-              child: Column(
-                children: [
-                  // ignore: deprecated_member_use
-                  FlatButton(
-                    onPressed: () {},
-                    child: Text("Upload"),
-                  ),
-                ],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Container(
+                height: size.height / 6,
+                width: size.width / 4,
+                child: Column(
+                  children: [
+                    ListTile(
+                      onTap: getImageFile,
+                      leading: Text("1"),
+                      title: Text("Upload Image"),
+                      trailing: Icon(Icons.upload_file),
+                    ),
+                    ListTile(
+                      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => ViewImage(
+                                imageUrl: widget.prefs.getString('image') == ""
+                                    ? 'https://www.sheknows.com/wp-content/uploads/2020/12/ben-higgins-1.jpg'
+                                    : widget.prefs.getString('image'),
+                                name: widget.name,
+                              ))),
+                      leading: Text("2"),
+                      title: Text("View Image"),
+                      trailing: Icon(Icons.photo),
+                    ),
+                  ],
+                ),
               ),
             ));
   }
@@ -79,7 +144,10 @@ class _ProfileState extends State<Profile> with SingleTickerProviderStateMixin {
                       borderRadius: BorderRadius.circular(15),
                       image: DecorationImage(
                           image: NetworkImage(
-                              'https://www.sheknows.com/wp-content/uploads/2020/12/ben-higgins-1.jpg'),
+                            widget.prefs.getString('image') == ""
+                                ? 'https://www.sheknows.com/wp-content/uploads/2020/12/ben-higgins-1.jpg'
+                                : widget.prefs.getString('image'),
+                          ),
                           fit: BoxFit.cover),
                     ),
                   ),
@@ -122,5 +190,35 @@ class _ProfileState extends State<Profile> with SingleTickerProviderStateMixin {
   void dispose() {
     animationController.dispose();
     super.dispose();
+  }
+}
+
+class ViewImage extends StatelessWidget {
+  final String name, imageUrl;
+
+  ViewImage({this.imageUrl, this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text(name),
+      ),
+      body: Center(
+        child: Container(
+          height: size.height / 2,
+          width: size.width,
+          decoration: BoxDecoration(
+            image: DecorationImage(
+              image: NetworkImage(imageUrl),
+              //s fit: BoxFit.cover,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

@@ -114,3 +114,23 @@ Future<List> recentChats(String gmail) async {
     return [];
   }
 }
+
+Future<Map<String, dynamic>> uploadImageLink(Map<String, dynamic> map) async {
+  var response = await http.patch(
+    Uri.http('glacial-shore-29640.herokuapp.com', '/users/updateimage'),
+    body: json.encode(map),
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+    },
+  );
+
+  Map<String, dynamic> resp = json.decode(response.body);
+
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    print("Sucessfull");
+    return resp;
+  } else {
+    print("error");
+    return resp;
+  }
+}

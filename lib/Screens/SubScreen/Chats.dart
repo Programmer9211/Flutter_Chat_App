@@ -21,6 +21,7 @@ class RecentChats extends StatelessWidget {
                 senderId: prefs.getString('gmail'),
                 socket: socket,
                 bloc: block,
+                imageUrl: chatList[index]['image'],
               )));
     }
   }
@@ -47,7 +48,10 @@ class RecentChats extends StatelessWidget {
                       shape: BoxShape.circle,
                       image: DecorationImage(
                           image: NetworkImage(
-                              "https://www.sheknows.com/wp-content/uploads/2020/12/ben-higgins-1.jpg"),
+                            chatList[index]['image'] == ""
+                                ? "https://www.sheknows.com/wp-content/uploads/2020/12/ben-higgins-1.jpg"
+                                : chatList[index]['image'],
+                          ),
                           fit: BoxFit.cover),
                     ),
                   ),

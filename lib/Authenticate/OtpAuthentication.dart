@@ -18,18 +18,39 @@ class OtpAuthentication extends StatelessWidget {
     bool check = EmailAuth.validate(receiverMail: gmail, userOTP: _otp.text);
 
     if (check) {
+      FocusScope.of(context).unfocus();
       Map<String, dynamic> map = {
         "username": name,
         "gmail": gmail,
         "password": password,
+        "image": ""
       };
+
+      BuildContext dialogcontext = context;
+
+      showDialog(
+        context: dialogcontext,
+        builder: (_) => Container(
+          height: MediaQuery.of(context).size.height,
+          width: MediaQuery.of(context).size.width,
+          alignment: Alignment.center,
+          child: Container(
+            height: MediaQuery.of(context).size.height / 15,
+            width: MediaQuery.of(context).size.height / 15,
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
 
       registerNewUser(map).then((value) async {
         if (value == 200 || value == 201) {
           await prefs.setString('username', name).then((value) => print(value));
           await prefs.setString('gmail', gmail);
+          await prefs.setString('image', "");
 
           String topic = gmail.substring(0, gmail.length - 10);
+
+          print(topic);
 
           await messaging.subscribeToTopic(topic);
           Navigator.of(context).pushAndRemoveUntil(
@@ -47,6 +68,7 @@ class OtpAuthentication extends StatelessWidget {
                     content:
                         "The email you are trying to create account is already registered",
                   ));
+          Navigator.pop(dialogcontext);
         }
       });
     } else {
@@ -149,7 +171,8 @@ class OtpAuthentication extends StatelessWidget {
               decoration: BoxDecoration(
                 image: DecorationImage(
                     image: NetworkImage(
-                        'https://image.shutterstock.com/image-vector/vector-illustration-flat-linear-style-260nw-1147927685.jpg'),
+                      'https://image.shutterstock.com/image-vector/vector-illustration-flat-linear-style-260nw-1147927685.jpg',
+                    ),
                     fit: BoxFit.cover),
               ),
             ),

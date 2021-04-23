@@ -136,6 +136,7 @@ class _LoginScreenState extends State<LoginScreen>
                     .setString('username', map['data']['username'])
                     .then((value) => print(value));
                 await prefs.setString('gmail', map['data']['gmail']);
+                await prefs.setString('image', map['data']['image']);
                 controller.reverse();
                 width = 0;
                 setState(() {});
@@ -332,8 +333,7 @@ class _LoginScreenState extends State<LoginScreen>
                                     controller: _gmail,
                                     style: TextStyle(color: Colors.white),
                                     decoration: InputDecoration(
-                                      // contentPadding: EdgeInsets.symmetric(
-                                      //     vertical: 20, horizontal: 20),
+                                      isDense: true,
 
                                       fillColor: Colors.grey,
                                       filled: true,
@@ -399,9 +399,9 @@ class _LoginScreenState extends State<LoginScreen>
                                                   ? "Login"
                                                   : "Create Account",
                                               style: TextStyle(
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                              )),
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: size.width / 30)),
                                           style: ElevatedButton.styleFrom(
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
